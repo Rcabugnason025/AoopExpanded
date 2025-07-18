@@ -354,7 +354,6 @@ public class EmployeeDAO {
      * Enhanced mapResultSetToEmployee matching actual database schema
      */
     private Employee mapResultSetToEmployee(ResultSet rs) throws SQLException {
-        Employee e = new RegularEmployee(); // Use concrete class instead of anonymous
         Employee e = createEmployeeInstance();
         e.setId(rs.getInt("employee_id"));
         e.setLastName(rs.getString("last_name"));
@@ -400,8 +399,6 @@ public class EmployeeDAO {
      * Map view result set to Employee with position details
      */
     private Employee mapViewResultSetToEmployee(ResultSet rs) throws SQLException {
-        // Create a RegularEmployee as default since we're just mapping data
-        Employee e = new RegularEmployee();
         Employee e = createEmployeeInstance();
         e.setId(rs.getInt("employee_id"));
         e.setLastName(rs.getString("last_name"));

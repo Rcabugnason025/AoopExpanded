@@ -275,6 +275,18 @@ public class Payroll extends BaseEntity {
         this.tax = tax;
         touch();
     }
+    
+    public java.time.LocalDate getStartDateAsLocalDate() {
+        return periodStart != null ? periodStart.toLocalDate() : null;
+    }
+    
+    public java.time.LocalDate getEndDateAsLocalDate() {
+        return periodEnd != null ? periodEnd.toLocalDate() : null;
+    }
+    
+    public double getDailyRate() {
+        return monthlyRate / 22.0; // 22 working days per month
+    }
 
     // Component-based methods (for backward compatibility)
     public List<PayrollComponent> getComponents() {
