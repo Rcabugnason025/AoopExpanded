@@ -368,27 +368,8 @@ public class EmployeeDAO {
      * Map view result set to Employee with position details
      */
     private Employee mapViewResultSetToEmployee(ResultSet rs) throws SQLException {
-        Employee e = new Employee() {
-		@Override
-		public double calculateGrossPay(int daysWorked, double overtimeHours) {
-			throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-		}
-
-		@Override
-		public double calculateDeductions() {
-			throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-		}
-
-		@Override
-		public double calculateAllowances() {
-			throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-		}
-
-		@Override
-		public boolean isEligibleForBenefits() {
-			throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
-		}
-	};
+        // Create a RegularEmployee as default since we're just mapping data
+        Employee e = new RegularEmployee();
         e.setId(rs.getInt("employee_id"));
         e.setLastName(rs.getString("last_name"));
         e.setFirstName(rs.getString("first_name"));

@@ -904,16 +904,16 @@ public class HRDashboard extends JFrame {
 
             for (Employee emp : employees) {
                 try {
-                    Payroll payroll = payrollCalculator.calculatePayroll(emp.getEmployeeId(), periodStart, periodEnd);
+                    PayrollCalculator.PayrollData payrollData = payrollCalculator.calculatePayroll(emp.getEmployeeId(), periodStart, periodEnd);
 
                     Object[] row = {
                             emp.getEmployeeId(),
                             emp.getFullName(),
                             periodStart.format(DateTimeFormatter.ofPattern("MMM yyyy")),
-                            payroll.getDaysWorked(),
-                            String.format("₱%.2f", payroll.getGrossPay()),
-                            String.format("₱%.2f", payroll.getTotalDeductions()),
-                            String.format("₱%.2f", payroll.getNetPay()),
+                            payrollData.getDaysWorked(),
+                            String.format("₱%.2f", payrollData.getGrossPay()),
+                            String.format("₱%.2f", payrollData.getTotalDeductions()),
+                            String.format("₱%.2f", payrollData.getNetPay()),
                             "View Payslip" // This will be rendered as a button
                     };
                     payrollTableModel.addRow(row);
@@ -1086,7 +1086,25 @@ public class HRDashboard extends JFrame {
             LocalDate periodStart = LocalDate.of(selectedYear, selectedMonth, 1);
             LocalDate periodEnd = periodStart.withDayOfMonth(periodStart.lengthOfMonth());
 
-            Payroll payroll = payrollCalculator.calculatePayroll(employeeId, periodStart, periodEnd);
+            PayrollCalculator.PayrollData payrollData = payrollCalculator.calculatePayroll(employeeId, periodStart, periodEnd);
+            
+            // Convert to Payroll object for dialog
+            Payroll payroll = new Payroll();
+            payroll.setEmployeeId(payrollData.getEmployeeId());
+            payroll.setPeriodStart(java.sql.Date.valueOf(payrollData.getPeriodStart()));
+            payroll.setPeriodEnd(java.sql.Date.valueOf(payrollData.getPeriodEnd()));
+            payroll.setMonthlyRate(payrollData.getMonthlyRate());
+            payroll.setDaysWorked(payrollData.getDaysWorked());
+            payroll.setGrossPay(payrollData.getGrossPay());
+            payroll.setTotalDeductions(payrollData.getTotalDeductions());
+            payroll.setNetPay(payrollData.getNetPay());
+            payroll.setRiceSubsidy(payrollData.getRiceSubsidy());
+            payroll.setPhoneAllowance(payrollData.getPhoneAllowance());
+            payroll.setClothingAllowance(payrollData.getClothingAllowance());
+            payroll.setSss(payrollData.getSss());
+            payroll.setPhilhealth(payrollData.getPhilhealth());
+            payroll.setPagibig(payrollData.getPagibig());
+            payroll.setTax(payrollData.getTax());
 
             // Create detailed payroll dialog
             PayrollDetailsDialog dialog = new PayrollDetailsDialog(this, employee, payroll);
