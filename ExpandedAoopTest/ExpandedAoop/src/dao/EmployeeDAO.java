@@ -319,6 +319,37 @@ public class EmployeeDAO {
         return employees;
     }
 
+    public List<Employee> searchEmployees(String searchTerm) {
+        List<Employee> employees = new ArrayList<>();
+        String query = "SELECT * FROM employees WHERE " +
+                "CONCAT(first_name, ' ', last_name) LIKE ? OR " +
+                "employee_id LIKE ? OR " +
+                "position LIKE ? " +
+                "ORDER BY last_name, first_name";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            String searchPattern = "%" + searchTerm + "%";
+            stmt.setString(1, searchPattern);
+            stmt.setString(2, searchPattern);
+            stmt.setString(3, searchPattern);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    Employee e = mapResultSetToEmployee(rs);
+                    employees.add(e);
+                }
+            }
+
+        } catch (SQLException ex) {
+            LOGGER.log(Level.SEVERE, "Error searching employees with term: " + searchTerm, ex);
+            throw new RuntimeException("Failed to search employees", ex);
+        }
+
+        return employees;
+    }
+
     /**
      * Enhanced mapResultSetToEmployee matching actual database schema
      */

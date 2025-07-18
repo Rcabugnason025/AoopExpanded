@@ -253,7 +253,7 @@ public class PayrollDetailsDialog extends JDialog {
         // Earnings Section
         sb.append("EARNINGS:\n");
         sb.append("================================================\n");
-        sb.append("Basic Pay           : ").append(formatCurrency(payroll.getGrossEarnings())).append("\n");
+        sb.append("Basic Pay           : ").append(formatCurrency(payroll.getGrossPay() - payroll.getTotalAllowances())).append("\n");
         sb.append("Overtime Pay        : ").append(formatCurrency(payroll.getOvertimePay())).append("\n");
         sb.append("Rice Subsidy        : ").append(formatCurrency(payroll.getRiceSubsidy())).append("\n");
         sb.append("Phone Allowance     : ").append(formatCurrency(payroll.getPhoneAllowance())).append("\n");
