@@ -354,7 +354,7 @@ public class EmployeeDAO {
      * Enhanced mapResultSetToEmployee matching actual database schema
      */
     private Employee mapResultSetToEmployee(ResultSet rs) throws SQLException {
-        Employee e = new Employee() {};
+        Employee e = new RegularEmployee(); // Use concrete class instead of anonymous
         e.setId(rs.getInt("employee_id"));
         e.setLastName(rs.getString("last_name"));
         e.setFirstName(rs.getString("first_name"));

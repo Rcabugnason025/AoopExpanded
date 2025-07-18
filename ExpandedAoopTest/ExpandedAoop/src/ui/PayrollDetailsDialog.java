@@ -2,8 +2,7 @@ package ui;
 
 import model.Employee;
 import model.Payroll;
-import service.JasperPayslipService;
-import service.JasperPayslipService.ExportFormat;
+import service.SimplePayslipService;
 
 import javax.swing.*;
 import java.awt.*;
@@ -16,24 +15,22 @@ import java.io.IOException;
 public class PayrollDetailsDialog extends JDialog {
     private Employee employee;
     private Payroll payroll;
-    private JasperPayslipService jasperService;
+    private SimplePayslipService payslipService;
     private JTextArea payslipTextArea;
     private JLabel statusLabel;
-    private boolean jasperReportsAvailable = true;
 
     public PayrollDetailsDialog(Frame parent, Employee employee, Payroll payroll) {
         super(parent, "Payroll Details - " + employee.getFullName(), true);
         this.employee = employee;
         this.payroll = payroll;
 
-        // Initialize JasperReports service
+        // Initialize payslip service
         try {
-            this.jasperService = new JasperPayslipService();
-            System.out.println("✅ JasperReports service initialized successfully");
+            this.payslipService = new SimplePayslipService();
+            System.out.println("✅ Payslip service initialized successfully");
         } catch (Exception e) {
-            System.err.println("⚠️ JasperReports not available, falling back to text mode: " + e.getMessage());
-            this.jasperReportsAvailable = false;
-            this.jasperService = null;
+            System.err.println("⚠️ Payslip service initialization failed: " + e.getMessage());
+            this.payslipService = null;
         }
 
         initializeComponents();
@@ -106,14 +103,13 @@ public class PayrollDetailsDialog extends JDialog {
         titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
         titleLabel.setForeground(Color.WHITE);
 
-        // Add JasperReports status indicator
-        JLabel jasperStatus = new JLabel(jasperReportsAvailable ?
-                "🟢 JasperReports Ready" : "🟡 Text Mode Only");
-        jasperStatus.setFont(new Font("Arial", Font.PLAIN, 12));
-        jasperStatus.setForeground(jasperReportsAvailable ? Color.GREEN : Color.YELLOW);
+        // Add service status indicator
+        JLabel serviceStatus = new JLabel("🟢 Payslip Service Ready");
+        serviceStatus.setFont(new Font("Arial", Font.PLAIN, 12));
+        serviceStatus.setForeground(Color.GREEN);
 
         headerPanel.add(titleLabel, BorderLayout.WEST);
-        headerPanel.add(jasperStatus, BorderLayout.EAST);
+        headerPanel.add(serviceStatus, BorderLayout.EAST);
 
         return headerPanel;
     }
@@ -165,30 +161,15 @@ public class PayrollDetailsDialog extends JDialog {
 
         // Create buttons with enhanced functionality
         JButton printButton = createStyledButton("🖨️ Print", new Color(70, 130, 180));
-        JButton pdfButton = createStyledButton("📄 Save PDF", new Color(220, 53, 69));
-        JButton excelButton = createStyledButton("📊 Save Excel", new Color(34, 139, 34));
         JButton textButton = createStyledButton("📝 Save Text", new Color(255, 140, 0));
         JButton closeButton = createStyledButton("❌ Close", new Color(108, 117, 125));
 
         // Add action listeners
         printButton.addActionListener(e -> printPayslip());
-        pdfButton.addActionListener(e -> saveAsPDF());
-        excelButton.addActionListener(e -> saveAsExcel());
         textButton.addActionListener(e -> saveAsText());
         closeButton.addActionListener(e -> dispose());
 
-        // Enable/disable buttons based on JasperReports availability
-        pdfButton.setEnabled(jasperReportsAvailable);
-        excelButton.setEnabled(jasperReportsAvailable);
-
-        if (!jasperReportsAvailable) {
-            pdfButton.setToolTipText("JasperReports not available - check your classpath");
-            excelButton.setToolTipText("JasperReports not available - check your classpath");
-        }
-
         buttonPanel.add(printButton);
-        buttonPanel.add(pdfButton);
-        buttonPanel.add(excelButton);
         buttonPanel.add(textButton);
         buttonPanel.add(closeButton);
 
@@ -298,9 +279,7 @@ public class PayrollDetailsDialog extends JDialog {
         payslipTextArea.setText(sb.toString());
         payslipTextArea.setCaretPosition(0); // Scroll to top
 
-        setStatus(jasperReportsAvailable ?
-                "Payslip ready - PDF/Excel export available" :
-                "Payslip ready - Text mode only");
+        setStatus("Payslip ready - Print and save available");
     }
 
     private String formatCurrency(double amount) {
@@ -318,134 +297,6 @@ public class PayrollDetailsDialog extends JDialog {
             }
         } catch (PrinterException e) {
             showError("Error printing payslip: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * NEW: Save payslip as PDF using JasperReports
-     */
-    private void saveAsPDF() {
-        if (!jasperReportsAvailable) {
-            showError("JasperReports not available. Please check your classpath and ensure JasperReports JAR files are included.");
-            return;
-        }
-
-        setStatus("Generating PDF...");
-
-        try {
-            JFileChooser fileChooser = new JFileChooser();
-            fileChooser.setDialogTitle("Save Payslip as PDF");
-
-            String filename = String.format("Payslip_%s_%s.pdf",
-                    employee.getLastName().replaceAll("\\s+", ""),
-                    payroll.getStartDateAsLocalDate().format(DateTimeFormatter.ofPattern("yyyy_MM")));
-
-            fileChooser.setSelectedFile(new File(filename));
-
-            int userSelection = fileChooser.showSaveDialog(this);
-            if (userSelection == JFileChooser.APPROVE_OPTION) {
-                File fileToSave = fileChooser.getSelectedFile();
-
-                // Ensure .pdf extension
-                if (!fileToSave.getName().toLowerCase().endsWith(".pdf")) {
-                    fileToSave = new File(fileToSave.getAbsolutePath() + ".pdf");
-                }
-
-                // Generate PDF using JasperReports
-                byte[] pdfData = jasperService.generatePayslipReport(employee, payroll, ExportFormat.PDF);
-
-                // Save to file
-                try (FileOutputStream fos = new FileOutputStream(fileToSave)) {
-                    fos.write(pdfData);
-                }
-
-                showSuccess("PDF payslip saved successfully to:\n" + fileToSave.getAbsolutePath());
-
-                // Ask if user wants to open the PDF
-                int openFile = JOptionPane.showConfirmDialog(this,
-                        "Would you like to open the PDF now?", "Open PDF?",
-                        JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-
-                if (openFile == JOptionPane.YES_OPTION) {
-                    try {
-                        if (Desktop.isDesktopSupported()) {
-                            Desktop.getDesktop().open(fileToSave);
-                        }
-                    } catch (IOException e) {
-                        showWarning("PDF saved but could not open automatically: " + e.getMessage());
-                    }
-                }
-            } else {
-                setStatus("PDF save cancelled");
-            }
-
-        } catch (Exception e) {
-            showError("Error generating PDF: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * NEW: Save payslip as Excel using JasperReports
-     */
-    private void saveAsExcel() {
-        if (!jasperReportsAvailable) {
-            showError("JasperReports not available. Please check your classpath and ensure JasperReports JAR files are included.");
-            return;
-        }
-
-        setStatus("Generating Excel file...");
-
-        try {
-            JFileChooser fileChooser = new JFileChooser();
-            fileChooser.setDialogTitle("Save Payslip as Excel");
-
-            String filename = String.format("Payslip_%s_%s.xlsx",
-                    employee.getLastName().replaceAll("\\s+", ""),
-                    payroll.getStartDateAsLocalDate().format(DateTimeFormatter.ofPattern("yyyy_MM")));
-
-            fileChooser.setSelectedFile(new File(filename));
-
-            int userSelection = fileChooser.showSaveDialog(this);
-            if (userSelection == JFileChooser.APPROVE_OPTION) {
-                File fileToSave = fileChooser.getSelectedFile();
-
-                // Ensure .xlsx extension
-                if (!fileToSave.getName().toLowerCase().endsWith(".xlsx")) {
-                    fileToSave = new File(fileToSave.getAbsolutePath() + ".xlsx");
-                }
-
-                // Generate Excel using JasperReports
-                byte[] excelData = jasperService.generatePayslipReport(employee, payroll, ExportFormat.EXCEL);
-
-                // Save to file
-                try (FileOutputStream fos = new FileOutputStream(fileToSave)) {
-                    fos.write(excelData);
-                }
-
-                showSuccess("Excel payslip saved successfully to:\n" + fileToSave.getAbsolutePath());
-
-                // Ask if user wants to open the Excel file
-                int openFile = JOptionPane.showConfirmDialog(this,
-                        "Would you like to open the Excel file now?", "Open Excel?",
-                        JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-
-                if (openFile == JOptionPane.YES_OPTION) {
-                    try {
-                        if (Desktop.isDesktopSupported()) {
-                            Desktop.getDesktop().open(fileToSave);
-                        }
-                    } catch (IOException e) {
-                        showWarning("Excel file saved but could not open automatically: " + e.getMessage());
-                    }
-                }
-            } else {
-                setStatus("Excel save cancelled");
-            }
-
-        } catch (Exception e) {
-            showError("Error generating Excel file: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -511,27 +362,4 @@ public class PayrollDetailsDialog extends JDialog {
         JOptionPane.showMessageDialog(this, message, "Warning", JOptionPane.WARNING_MESSAGE);
     }
 
-    /**
-     * Enhanced version info for debugging
-     */
-    public void showVersionInfo() {
-        StringBuilder info = new StringBuilder();
-        info.append("PayrollDetailsDialog Enhanced Version\n");
-        info.append("=====================================\n");
-        info.append("JasperReports Available: ").append(jasperReportsAvailable ? "✅ Yes" : "❌ No").append("\n");
-        info.append("PDF Export: ").append(jasperReportsAvailable ? "✅ Available" : "❌ Unavailable").append("\n");
-        info.append("Excel Export: ").append(jasperReportsAvailable ? "✅ Available" : "❌ Unavailable").append("\n");
-        info.append("Text Export: ✅ Available\n");
-        info.append("Print Function: ✅ Available\n");
-
-        if (!jasperReportsAvailable) {
-            info.append("\n⚠️ To enable PDF/Excel export:\n");
-            info.append("1. Add JasperReports JAR files to classpath\n");
-            info.append("2. Ensure motorph_payslip.jrxml is in resources/reports/\n");
-            info.append("3. Restart the application\n");
-        }
-
-        JOptionPane.showMessageDialog(this, info.toString(), "Version Information",
-                JOptionPane.INFORMATION_MESSAGE);
-    }
 }

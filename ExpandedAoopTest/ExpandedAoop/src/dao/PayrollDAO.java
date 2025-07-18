@@ -25,8 +25,8 @@ public class PayrollDAO {
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setInt(1, employeeId);
-            stmt.setDate(2, Date.valueOf(startDate));
-            stmt.setDate(3, Date.valueOf(endDate));
+            stmt.setDate(2, java.sql.Date.valueOf(startDate));
+            stmt.setDate(3, java.sql.Date.valueOf(endDate));
 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {

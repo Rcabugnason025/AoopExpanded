@@ -1,7 +1,6 @@
 package model;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.Period;
 
 // Abstract base class demonstrating ABSTRACTION
@@ -27,6 +26,7 @@ public abstract class Employee extends BaseEntity {
     protected double grossSemiMonthlyRate;
     protected double hourlyRate;
     protected int positionId;
+    protected String department; // Add department field
     
     // Default constructor
     public Employee() {
@@ -87,6 +87,24 @@ public abstract class Employee extends BaseEntity {
     
     public double getTotalAllowances() {
         return riceSubsidy + phoneAllowance + clothingAllowance;
+    }
+    
+    public String getDepartment() { 
+        if (department != null) return department;
+        // Derive department from position if not set
+        if (position == null) return "General";
+        String pos = position.toLowerCase();
+        if (pos.contains("hr")) return "Human Resources";
+        if (pos.contains("accounting") || pos.contains("payroll")) return "Accounting";
+        if (pos.contains("marketing")) return "Marketing";
+        if (pos.contains("it")) return "IT";
+        if (pos.contains("ceo") || pos.contains("executive")) return "Executive";
+        return "General";
+    }
+    
+    public void setDepartment(String department) { 
+        this.department = department; 
+        touch();
     }
     
     public boolean isFullDay() {
