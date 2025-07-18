@@ -6,8 +6,7 @@ package ui;
 
 import model.Employee;
 import dao.EmployeeDAO;
-import reports.MotorPHPayslipGenerator;
-import net.sf.jasperreports.engine.JRException;
+import service.SimplePayslipService;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -30,11 +29,11 @@ public class PayslipGenerationPanel extends JPanel {
     private JTextArea statusArea;
     
     private EmployeeDAO employeeDAO;
-    private MotorPHPayslipGenerator payslipGenerator;
+    private SimplePayslipService payslipService;
     
     public PayslipGenerationPanel() {
         this.employeeDAO = new EmployeeDAO();
-        this.payslipGenerator = new MotorPHPayslipGenerator();
+        this.payslipService = new SimplePayslipService();
         initializeComponents();
         setupLayout();
         setupEventHandlers();
@@ -196,7 +195,11 @@ public class PayslipGenerationPanel extends JPanel {
             updateStatus("📊 Generating payslip PDF...");
             
             // Generate payslip
-            File payslipFile = payslipGenerator.generatePayslip(employee, daysWorked, overtimeHours, periodStart, periodEnd);
+            java.time.LocalDate localStart = periodStart.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
+            java.time.LocalDate localEnd = periodEnd.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
+            
+            File payslipFile = payslipService.generatePayslipToFile(employee.getEmployeeId(), localStart, localEnd, 
+                System.getProperty("user.home") + "/MotorPH_Payslips/");
             
             updateStatus("✅ Payslip generated successfully!");
             updateStatus("📁 File saved to: " + payslipFile.getAbsolutePath());
@@ -217,9 +220,6 @@ public class PayslipGenerationPanel extends JPanel {
         } catch (NumberFormatException e) {
             updateStatus("❌ Invalid input format. Please check your entries.");
             JOptionPane.showMessageDialog(this, "Please enter valid numeric values.", "Input Error", JOptionPane.ERROR_MESSAGE);
-        } catch (JRException e) {
-            updateStatus("❌ Report generation error: " + e.getMessage());
-            JOptionPane.showMessageDialog(this, "Failed to generate payslip: " + e.getMessage(), "Generation Error", JOptionPane.ERROR_MESSAGE);
         } catch (Exception e) {
             updateStatus("❌ Unexpected error: " + e.getMessage());
             JOptionPane.showMessageDialog(this, "Unexpected error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -245,7 +245,23 @@ public class PayslipGenerationPanel extends JPanel {
             updateStatus("🔍 Opening payslip preview for " + employee.getFullName() + "...");
             
             // Show preview
-            payslipGenerator.previewPayslip(employee, daysWorked, overtimeHours, periodStart, periodEnd);
+            java.time.LocalDate localStart = periodStart.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
+            java.time.LocalDate localEnd = periodEnd.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
+            
+            String payslipText = payslipService.generatePayslipText(employee.getEmployeeId(), localStart, localEnd);
+            
+            // Show in dialog
+            JDialog previewDialog = new JDialog();
+            previewDialog.setTitle("Payslip Preview - " + employee.getFullName());
+            previewDialog.setSize(800, 600);
+            previewDialog.setLocationRelativeTo(this);
+            
+            JTextArea textArea = new JTextArea(payslipText);
+            textArea.setFont(new Font("Courier New", Font.PLAIN, 12));
+            textArea.setEditable(false);
+            
+            previewDialog.add(new JScrollPane(textArea));
+            previewDialog.setVisible(true);
             
             updateStatus("✓ Preview window opened successfully");
             
@@ -274,7 +290,11 @@ public class PayslipGenerationPanel extends JPanel {
             updateStatus("🖨️ Generating payslip for printing...");
             
             // Generate PDF first
-            File payslipFile = payslipGenerator.generatePayslip(employee, daysWorked, overtimeHours, periodStart, periodEnd);
+            java.time.LocalDate localStart = periodStart.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
+            java.time.LocalDate localEnd = periodEnd.toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
+            
+            File payslipFile = payslipService.generatePayslipToFile(employee.getEmployeeId(), localStart, localEnd, 
+                System.getProperty("user.home") + "/MotorPH_Payslips/");
             
             updateStatus("✓ PDF generated, opening print dialog...");
             

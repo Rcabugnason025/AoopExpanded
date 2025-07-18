@@ -355,6 +355,7 @@ public class EmployeeDAO {
      */
     private Employee mapResultSetToEmployee(ResultSet rs) throws SQLException {
         Employee e = new RegularEmployee(); // Use concrete class instead of anonymous
+        Employee e = createEmployeeInstance();
         e.setId(rs.getInt("employee_id"));
         e.setLastName(rs.getString("last_name"));
         e.setFirstName(rs.getString("first_name"));
@@ -401,6 +402,7 @@ public class EmployeeDAO {
     private Employee mapViewResultSetToEmployee(ResultSet rs) throws SQLException {
         // Create a RegularEmployee as default since we're just mapping data
         Employee e = new RegularEmployee();
+        Employee e = createEmployeeInstance();
         e.setId(rs.getInt("employee_id"));
         e.setLastName(rs.getString("last_name"));
         e.setFirstName(rs.getString("first_name"));
@@ -507,6 +509,39 @@ public class EmployeeDAO {
         }
 
         return "Unknown Supervisor";
+    }
+    
+    /**
+     * Helper method to create employee instance
+     */
+    private Employee createEmployeeInstance() {
+        return new Employee() {
+            @Override
+            public double calculateGrossPay(int daysWorked, double overtimeHours) {
+                double dailyRate = getBasicSalary() / 22;
+                return dailyRate * daysWorked;
+            }
+            
+            @Override
+            public double calculateDeductions() {
+                return getBasicSalary() * 0.15; // 15% deductions
+            }
+            
+            @Override
+            public double calculateAllowances() {
+                return getRiceSubsidy() + getPhoneAllowance() + getClothingAllowance();
+            }
+            
+            @Override
+            public boolean isEligibleForBenefits() {
+                return "Regular".equals(getStatus());
+            }
+            
+            @Override
+            public String getEmployeeType() {
+                return "Database Employee";
+            }
+        };
     }
 
     /**

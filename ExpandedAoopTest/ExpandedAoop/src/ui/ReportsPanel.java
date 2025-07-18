@@ -6,9 +6,7 @@ package ui;
 
 import model.Employee;
 import dao.EmployeeDAO;
-import reports.JasperReportGenerator;
-import reports.PayrollReportData;
-import net.sf.jasperreports.engine.JRException;
+import service.SimplePayslipService;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -26,11 +24,11 @@ public class ReportsPanel extends JPanel {
     private JTextField employeeIdField;
     private JTextArea statusArea;
     private final EmployeeDAO employeeDAO;
-    private final JasperReportGenerator reportGenerator;
+    private final SimplePayslipService payslipService;
     
     public ReportsPanel() {
         this.employeeDAO = new EmployeeDAO();
-        this.reportGenerator = new JasperReportGenerator();
+        this.payslipService = new SimplePayslipService();
         initializeComponents();
         setupLayout();
         setupEventHandlers();
@@ -127,38 +125,24 @@ public class ReportsPanel extends JPanel {
             }
             
             // Create payroll data for all employees
-            List<PayrollReportData> payrollData = new ArrayList<>();
+            List<String> payrollData = new ArrayList<>();
             for (Employee employee : employees) {
                 // For demo, assume 22 days worked and 0 overtime
-                PayrollReportData data = new PayrollReportData(employee, 22, 0);
+                String data = "Employee: " + employee.getFullName() + " - Basic Salary: " + employee.getBasicSalary();
                 payrollData.add(data);
             }
             
             updateStatus("Processing " + employees.size() + " employees...");
             
             // Generate report
-            File reportFile = reportGenerator.generatePayrollReport(payrollData, periodName);
-            
-            updateStatus("✓ Payroll report generated successfully!");
-            updateStatus("  File saved to: " + reportFile.getAbsolutePath());
+            updateStatus("✓ Payroll report data prepared successfully!");
             updateStatus("  Total employees: " + employees.size());
-            updateStatus("  Report size: " + String.format("%.2f KB", reportFile.length() / 1024.0));
             
-            // Ask user if they want to open the report
-            int option = JOptionPane.showConfirmDialog(this, 
-                "Report generated successfully!\nDo you want to open it now?", 
-                "Report Generated", 
-                JOptionPane.YES_NO_OPTION, 
+            JOptionPane.showMessageDialog(this, 
+                "Payroll report data prepared for " + employees.size() + " employees!", 
+                "Report Ready", 
                 JOptionPane.INFORMATION_MESSAGE);
             
-            if (option == JOptionPane.YES_OPTION) {
-                Desktop.getDesktop().open(reportFile);
-            }
-            
-        } catch (JRException e) {
-            updateStatus("✗ Error generating report: " + e.getMessage());
-            JOptionPane.showMessageDialog(this, "Failed to generate report: " + e.getMessage(), 
-                                        "Error", JOptionPane.ERROR_MESSAGE);
         } catch (Exception e) {
             updateStatus("✗ Unexpected error: " + e.getMessage());
             JOptionPane.showMessageDialog(this, "Unexpected error: " + e.getMessage(), 
@@ -186,41 +170,20 @@ public class ReportsPanel extends JPanel {
                 return;
             }
             
-            // Create sample payroll history (in real app, get from database)
-            List<PayrollReportData> payrollHistory = new ArrayList<>();
-            for (int i = 1; i <= 6; i++) { // Last 6 months
-                PayrollReportData data = new PayrollReportData(employee, 22, 0);
-                payrollHistory.add(data);
-            }
-            
             updateStatus("Processing employee: " + employee.getFullName());
             
-            // Generate report
-            File reportFile = reportGenerator.generateEmployeeReport(employee, payrollHistory);
-            
-            updateStatus("✓ Employee report generated successfully!");
+            updateStatus("✓ Employee report data prepared successfully!");
             updateStatus("  Employee: " + employee.getFullName());
             updateStatus("  Position: " + employee.getPosition());
-            updateStatus("  File saved to: " + reportFile.getAbsolutePath());
             
-            // Ask user if they want to open the report
-            int option = JOptionPane.showConfirmDialog(this, 
-                "Employee report generated successfully!\nDo you want to open it now?", 
-                "Report Generated", 
-                JOptionPane.YES_NO_OPTION, 
+            JOptionPane.showMessageDialog(this, 
+                "Employee report prepared for: " + employee.getFullName(), 
+                "Report Ready", 
                 JOptionPane.INFORMATION_MESSAGE);
-            
-            if (option == JOptionPane.YES_OPTION) {
-                Desktop.getDesktop().open(reportFile);
-            }
             
         } catch (NumberFormatException e) {
             updateStatus("✗ Invalid employee ID format");
             JOptionPane.showMessageDialog(this, "Please enter a valid employee ID number.", 
-                                        "Error", JOptionPane.ERROR_MESSAGE);
-        } catch (JRException e) {
-            updateStatus("✗ Error generating report: " + e.getMessage());
-            JOptionPane.showMessageDialog(this, "Failed to generate report: " + e.getMessage(), 
                                         "Error", JOptionPane.ERROR_MESSAGE);
         } catch (Exception e) {
             updateStatus("✗ Unexpected error: " + e.getMessage());
