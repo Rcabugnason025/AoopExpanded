@@ -400,7 +400,6 @@ public class EmployeeDAO {
      */
     private Employee mapViewResultSetToEmployee(ResultSet rs) throws SQLException {
         Employee e = createEmployeeInstance();
-        e.setId(rs.getInt("employee_id"));
         e.setLastName(rs.getString("last_name"));
         e.setFirstName(rs.getString("first_name"));
 
@@ -512,8 +511,7 @@ public class EmployeeDAO {
      * Helper method to create employee instance
      */
     private Employee createEmployeeInstance() {
-        return new Employee() {
-            @Override
+        // Create anonymous Employee implementation for database operations
             public double calculateGrossPay(int daysWorked, double overtimeHours) {
                 double dailyRate = getBasicSalary() / 22;
                 return dailyRate * daysWorked;
